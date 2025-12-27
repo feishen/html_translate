@@ -529,10 +529,10 @@
                                         mirrorConfig.huggingface
                                     ),
                                     // 替换 GitHub Raw 地址
-                                    model_lib: model.model_lib ? model.model_lib.replace(
-                                        "https://raw.githubusercontent.com",
-                                        mirrorConfig.github
-                                    ) : model.model_lib
+                                    // model_lib: model.model_lib ? model.model_lib.replace(
+                                    //     "https://raw.githubusercontent.com",
+                                    //     mirrorConfig.github
+                                    // ) : model.model_lib
                                 };
                             }
                             return model;
