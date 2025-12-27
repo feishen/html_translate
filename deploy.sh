@@ -1,0 +1,1 @@
+az webapp up --sku F1 --name qq1translate --html -g emmelle_0_rg_0039 -p emmelle_0_asp_3263 -l eastasia

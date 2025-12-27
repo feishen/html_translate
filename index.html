@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="支持中英日韩法荷德多语言互译的离线翻译应用">
+    <meta name="theme-color" content="#667eea">
+    <title>离线多语言翻译</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .model-status {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .status-info {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .status-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .model-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .language-select {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .language-select label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        select {
+            flex: 1;
+            min-width: 150px;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-section {
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .output-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .output-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 120px;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .output-box.empty {
+            color: #999;
+            font-style: italic;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .model-buttons {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .language-select {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        .icon {
+            width: 16px;
+            height: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>离线多语言翻译</h1>
+
+        <!-- Model Status -->
+        <div class="model-status">
+            <div class="status-info">
+                <div class="status-label">模型状态</div>
+                <div class="status-value" id="modelStatus">未加载</div>
+            </div>
+            <div class="model-buttons">
+                <button class="btn-success" id="loadModelBtn">加载模型</button>
+                <button class="btn-danger" id="deleteModelBtn" style="display: none;">删除模型</button>
+            </div>
+        </div>
+
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill">0%</div>
+        </div>
+
+        <!-- Language Selection -->
+        <div class="language-select">
+            <label>源语言:</label>
+            <select id="sourceLang">
+                <option value="zh">中文</option>
+                <option value="en">English</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="fr">Français</option>
+                <option value="nl">Nederlands</option>
+                <option value="de">Deutsch</option>
+            </select>
+
+            <label>目标语言:</label>
+            <select id="targetLang">
+                <option value="en">English</option>
+                <option value="zh">中文</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="fr">Français</option>
+                <option value="nl">Nederlands</option>
+                <option value="de">Deutsch</option>
+            </select>
+        </div>
+
+        <!-- Input Section -->
+        <div class="input-section">
+            <textarea id="inputText" placeholder="请输入要翻译的文字..."></textarea>
+            <div class="button-group">
+                <button class="btn-secondary" id="voiceInputBtn">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    语音输入
+                </button>
+                <button class="btn-primary" id="translateBtn" disabled>
+                    翻译
+                </button>
+            </div>
+        </div>
+
+        <!-- Output Section -->
+        <div class="output-section">
+            <div class="output-box empty" id="outputText">翻译结果将显示在这里...</div>
+            <div class="button-group">
+                <button class="btn-secondary" id="speakBtn" style="display: none;">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd"/>
+                    </svg>
+                    朗读
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { CreateMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
+
+        // Register Service Worker for offline support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((registration) => {
+                        console.log('Service Worker registered successfully:', registration.scope);
+
+                        // Check for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New service worker available, show update notification
+                                    if (confirm('发现新版本，是否立即更新？')) {
+                                        newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+
+                // Handle controller change
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    window.location.reload();
+                });
+            });
+        }
+
+        // Language mapping
+        const langMap = {
+            'zh': '中文',
+            'en': 'English',
+            'ja': '日本語',
+            'ko': '한국어',
+            'fr': 'Français',
+            'nl': 'Nederlands',
+            'de': 'Deutsch'
+        };
+
+        // State
+        let engine = null;
+        let isModelLoaded = false;
+        let recognition = null;
+
+        // DOM elements
+        const modelStatus = document.getElementById('modelStatus');
+        const loadModelBtn = document.getElementById('loadModelBtn');
+        const deleteModelBtn = document.getElementById('deleteModelBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const sourceLang = document.getElementById('sourceLang');
+        const targetLang = document.getElementById('targetLang');
+        const inputText = document.getElementById('inputText');
+        const outputText = document.getElementById('outputText');
+        const translateBtn = document.getElementById('translateBtn');
+        const voiceInputBtn = document.getElementById('voiceInputBtn');
+        const speakBtn = document.getElementById('speakBtn');
+
+        // Initialize Speech Recognition
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                inputText.value = transcript;
+                voiceInputBtn.textContent = '语音输入';
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                voiceInputBtn.textContent = '语音输入';
+                alert('语音识别错误: ' + event.error);
+            };
+
+            recognition.onend = () => {
+                voiceInputBtn.textContent = '语音输入';
+            };
+        } else {
+            voiceInputBtn.disabled = true;
+            voiceInputBtn.title = '您的浏览器不支持语音识别';
+        }
+
+        // Load Model
+        loadModelBtn.addEventListener('click', async () => {
+            loadModelBtn.disabled = true;
+            modelStatus.textContent = '加载中...';
+            progressBar.style.display = 'block';
+
+            try {
+                const initProgressCallback = (progress) => {
+                    const percent = Math.round(progress.progress * 100);
+                    progressFill.style.width = percent + '%';
+                    progressFill.textContent = percent + '%';
+                    modelStatus.textContent = `加载中... ${percent}%`;
+                };
+
+                // Use Qwen2.5-0.5B-Instruct as it's similar to qwen3:0.6
+                engine = await CreateMLCEngine(
+                    "Qwen3-0.6B-q0f16-MLC",
+                    {
+                        initProgressCallback: initProgressCallback,
+                    }
+                );
+
+                isModelLoaded = true;
+                modelStatus.textContent = '已加载';
+                loadModelBtn.style.display = 'none';
+                deleteModelBtn.style.display = 'inline-flex';
+                translateBtn.disabled = false;
+                progressBar.style.display = 'none';
+
+                alert('模型加载成功！现在可以离线使用翻译功能。');
+            } catch (error) {
+                console.error('Model loading error:', error);
+                modelStatus.textContent = '加载失败';
+                loadModelBtn.disabled = false;
+                progressBar.style.display = 'none';
+                alert('模型加载失败: ' + error.message);
+            }
+        });
+
+        // Delete Model
+        deleteModelBtn.addEventListener('click', async () => {
+            if (confirm('确定要删除模型吗？这将释放浏览器存储空间，但之后需要重新加载才能使用翻译功能。')) {
+                try {
+                    // Unload engine
+                    if (engine) {
+                        await engine.unload();
+                        engine = null;
+                    }
+
+                    // Clear cache
+                    const cacheNames = await caches.keys();
+                    for (const cacheName of cacheNames) {
+                        if (cacheName.includes('webllm') || cacheName.includes('mlc')) {
+                            await caches.delete(cacheName);
+                        }
+                    }
+
+                    // Clear IndexedDB
+                    const databases = await indexedDB.databases();
+                    for (const db of databases) {
+                        if (db.name && (db.name.includes('webllm') || db.name.includes('mlc'))) {
+                            indexedDB.deleteDatabase(db.name);
+                        }
+                    }
+
+                    isModelLoaded = false;
+                    modelStatus.textContent = '未加载';
+                    loadModelBtn.style.display = 'inline-flex';
+                    deleteModelBtn.style.display = 'none';
+                    translateBtn.disabled = true;
+                    outputText.textContent = '翻译结果将显示在这里...';
+                    outputText.classList.add('empty');
+                    speakBtn.style.display = 'none';
+
+                    alert('模型已删除');
+                } catch (error) {
+                    console.error('Error deleting model:', error);
+                    alert('删除模型时出错: ' + error.message);
+                }
+            }
+        });
+
+        // Voice Input
+        voiceInputBtn.addEventListener('click', () => {
+            if (!recognition) {
+                alert('您的浏览器不支持语音识别');
+                return;
+            }
+
+            const sourceLangCode = sourceLang.value;
+            const langCodes = {
+                'zh': 'zh-CN',
+                'en': 'en-US',
+                'ja': 'ja-JP',
+                'ko': 'ko-KR',
+                'fr': 'fr-FR',
+                'nl': 'nl-NL',
+                'de': 'de-DE'
+            };
+
+            recognition.lang = langCodes[sourceLangCode] || 'zh-CN';
+
+            try {
+                recognition.start();
+                voiceInputBtn.innerHTML = '<div class="loading"></div> 正在听...';
+            } catch (error) {
+                console.error('Recognition start error:', error);
+                alert('启动语音识别失败: ' + error.message);
+            }
+        });
+
+        // Translate
+        translateBtn.addEventListener('click', async () => {
+            const text = inputText.value.trim();
+            if (!text) {
+                alert('请输入要翻译的文字');
+                return;
+            }
+
+            if (!isModelLoaded) {
+                alert('请先加载模型');
+                return;
+            }
+
+            translateBtn.disabled = true;
+            translateBtn.innerHTML = '<div class="loading"></div> 翻译中...';
+            outputText.textContent = '正在翻译...';
+            outputText.classList.add('empty');
+
+            try {
+                const sourceLangName = langMap[sourceLang.value];
+                const targetLangName = langMap[targetLang.value];
+
+                const prompt = `Translate the following text from ${sourceLangName} to ${targetLangName}. Only output the translation, nothing else.\n\nText: ${text}\n\nTranslation:`;
+
+                const reply = await engine.chat.completions.create({
+                    messages: [{ role: "user", content: prompt }],
+                    temperature: 0.3,
+                    max_tokens: 512,
+                    reasoning_effort: 0,  // Disable thinking/reasoning mode
+                });
+
+                let translation = reply.choices[0].message.content.trim();
+                // Remove <think> tags and their content
+                translation = translation.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+                outputText.textContent = translation;
+                outputText.classList.remove('empty');
+                speakBtn.style.display = 'inline-flex';
+            } catch (error) {
+                console.error('Translation error:', error);
+                outputText.textContent = '翻译失败: ' + error.message;
+                outputText.classList.add('empty');
+            } finally {
+                translateBtn.disabled = false;
+                translateBtn.textContent = '翻译';
+            }
+        });
+
+        // Text to Speech
+        speakBtn.addEventListener('click', () => {
+            const text = outputText.textContent;
+            if (!text || outputText.classList.contains('empty')) {
+                alert('没有可朗读的内容');
+                return;
+            }
+
+            if ('speechSynthesis' in window) {
+                // Cancel any ongoing speech
+                speechSynthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                const targetLangCode = targetLang.value;
+
+                // Get available voices
+                const voices = speechSynthesis.getVoices();
+
+                // Language code mapping for TTS
+                const ttsLangCodes = {
+                    'zh': 'zh-CN',
+                    'en': 'en-US',
+                    'ja': 'ja-JP',
+                    'ko': 'ko-KR',
+                    'fr': 'fr-FR',
+                    'nl': 'nl-NL',
+                    'de': 'de-DE'
+                };
+
+                const preferredLang = ttsLangCodes[targetLangCode] || 'en-US';
+
+                // Find a suitable voice for the target language
+                let selectedVoice = voices.find(voice => voice.lang === preferredLang);
+
+                if (!selectedVoice) {
+                    // Fallback to any voice matching the language prefix
+                    const langPrefix = preferredLang.split('-')[0];
+                    selectedVoice = voices.find(voice => voice.lang.startsWith(langPrefix));
+                }
+
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                    utterance.lang = selectedVoice.lang;
+                } else {
+                    utterance.lang = preferredLang;
+                }
+
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+
+                utterance.onstart = () => {
+                    speakBtn.textContent = '朗读中...';
+                };
+
+                utterance.onend = () => {
+                    speakBtn.innerHTML = '<svg class="icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd"/></svg> 朗读';
+                };
+
+                utterance.onerror = (event) => {
+                    console.error('Speech error:', event);
+                    speakBtn.innerHTML = '<svg class="icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd"/></svg> 朗读';
+                    alert('朗读失败: ' + event.error);
+                };
+
+                speechSynthesis.speak(utterance);
+            } else {
+                alert('您的浏览器不支持语音合成');
+            }
+        });
+
+        // Load voices (needed for some browsers)
+        if ('speechSynthesis' in window) {
+            speechSynthesis.getVoices();
+            speechSynthesis.onvoiceschanged = () => {
+                speechSynthesis.getVoices();
+            };
+        }
+    </script>
+</body>
+</html>
