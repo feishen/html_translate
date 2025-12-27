@@ -304,6 +304,17 @@
             </div>
         </div>
 
+        <!-- Mirror Selection -->
+        <div class="language-select" style="margin-top: 15px;">
+            <label>下载源:</label>
+            <select id="mirrorSelect">
+                <option value="hf-mirror">HF-Mirror (推荐国内用户)</option>
+                <option value="modelscope">ModelScope 镜像 (实验性)</option>
+                <option value="ghproxy">GitHub Proxy</option>
+                <option value="original">原始地址 (海外用户)</option>
+            </select>
+        </div>
+
         <div class="progress-bar" id="progressBar">
             <div class="progress-fill" id="progressFill">0%</div>
         </div>
@@ -365,7 +376,7 @@
     </div>
 
     <script type="module">
-        import { CreateMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
+        import { CreateMLCEngine, prebuiltAppConfig } from "https://esm.run/@mlc-ai/web-llm";
 
         // Register Service Worker for offline support
         if ('serviceWorker' in navigator) {
@@ -399,6 +410,30 @@
             });
         }
 
+        // 镜像站配置
+        const mirrorConfigs = {
+            'hf-mirror': {
+                name: 'HF-Mirror',
+                huggingface: 'https://hf-mirror.com',
+                github: 'https://ghp.ci/https://raw.githubusercontent.com'
+            },
+            'modelscope': {
+                name: 'ModelScope',
+                huggingface: 'https://hf-mirror.com', // ModelScope 暂无 MLC 格式，仍用 HF-Mirror
+                github: 'https://ghp.ci/https://raw.githubusercontent.com'
+            },
+            'ghproxy': {
+                name: 'GitHub Proxy',
+                huggingface: 'https://hub.gitmirror.com',
+                github: 'https://raw.gitmirror.com'
+            },
+            'original': {
+                name: '原始地址',
+                huggingface: 'https://huggingface.co',
+                github: 'https://raw.githubusercontent.com'
+            }
+        };
+
         // Language mapping
         const langMap = {
             'zh': '中文',
@@ -419,6 +454,7 @@
         const modelStatus = document.getElementById('modelStatus');
         const loadModelBtn = document.getElementById('loadModelBtn');
         const deleteModelBtn = document.getElementById('deleteModelBtn');
+        const mirrorSelect = document.getElementById('mirrorSelect');
         const progressBar = document.getElementById('progressBar');
         const progressFill = document.getElementById('progressFill');
         const sourceLang = document.getElementById('sourceLang');
@@ -470,12 +506,48 @@
                     modelStatus.textContent = `加载中... ${percent}%`;
                 };
 
-                // Use Qwen2.5-0.5B-Instruct as it's similar to qwen3:0.6
+                // 配置模型下载源
+                let engineConfig = {
+                    initProgressCallback: initProgressCallback,
+                };
+
+                // 获取用户选择的镜像配置
+                const selectedMirror = mirrorSelect.value;
+                const mirrorConfig = mirrorConfigs[selectedMirror];
+
+                // 如果不是使用原始地址，则配置镜像
+                if (selectedMirror !== 'original') {
+                    // 获取预构建配置并修改 URL
+                    const customAppConfig = {
+                        model_list: prebuiltAppConfig.model_list.map(model => {
+                            if (model.model_id === "Qwen3-0.6B-q0f16-MLC") {
+                                return {
+                                    ...model,
+                                    // 替换 Hugging Face 地址
+                                    model: model.model.replace(
+                                        "https://huggingface.co",
+                                        mirrorConfig.huggingface
+                                    ),
+                                    // 替换 GitHub Raw 地址
+                                    model_lib: model.model_lib ? model.model_lib.replace(
+                                        "https://raw.githubusercontent.com",
+                                        mirrorConfig.github
+                                    ) : model.model_lib
+                                };
+                            }
+                            return model;
+                        })
+                    };
+                    engineConfig.appConfig = customAppConfig;
+                    console.log(`使用 ${mirrorConfig.name} 镜像加载模型`);
+                } else {
+                    console.log('使用原始 Hugging Face 地址加载模型');
+                }
+
+                // Use Qwen3-0.6B-Instruct
                 engine = await CreateMLCEngine(
                     "Qwen3-0.6B-q0f16-MLC",
-                    {
-                        initProgressCallback: initProgressCallback,
-                    }
+                    engineConfig
                 );
 
                 isModelLoaded = true;
