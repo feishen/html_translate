@@ -1,0 +1,8 @@
+# MacOS files
+.DS_Store
+
+# Claude settings
+.claude/
+
+# Node modules (if you add them later)
+node_modules/

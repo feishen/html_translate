@@ -415,17 +415,17 @@
             'hf-mirror': {
                 name: 'HF-Mirror',
                 huggingface: 'https://hf-mirror.com',
-                github: 'https://ghp.ci/https://raw.githubusercontent.com'
+                github: `${window.location.origin}/resource/wasm`
             },
             'modelscope': {
                 name: 'ModelScope',
-                huggingface: 'https://hf-mirror.com', // ModelScope 暂无 MLC 格式，仍用 HF-Mirror
-                github: 'https://ghp.ci/https://raw.githubusercontent.com'
+                huggingface: 'https://modelscope.cn/models', // ModelScope 暂无 MLC 格式，仍用 HF-Mirror
+                github: `${window.location.origin}/resource/wasm` // 使用当前部署的域名
             },
             'ghproxy': {
                 name: 'GitHub Proxy',
                 huggingface: 'https://hub.gitmirror.com',
-                github: 'https://raw.gitmirror.com'
+                github: `${window.location.origin}/resource/wasm`
             },
             'original': {
                 name: '原始地址',
@@ -520,7 +520,7 @@
                     // 获取预构建配置并修改 URL
                     const customAppConfig = {
                         model_list: prebuiltAppConfig.model_list.map(model => {
-                            if (model.model_id === "Qwen3-0.6B-q0f16-MLC") {
+                            if (model.model_id === "Qwen3-0.6B-q4f16_1-MLC") {
                                 return {
                                     ...model,
                                     // 替换 Hugging Face 地址
@@ -529,10 +529,10 @@
                                         mirrorConfig.huggingface
                                     ),
                                     // 替换 GitHub Raw 地址
-                                    // model_lib: model.model_lib ? model.model_lib.replace(
-                                    //     "https://raw.githubusercontent.com",
-                                    //     mirrorConfig.github
-                                    // ) : model.model_lib
+                                    model_lib: model.model_lib ? model.model_lib.replace(
+                                        "https://raw.githubusercontent.com/mlc-ai/binary-mlc-llm-libs/main/web-llm-models",
+                                        mirrorConfig.github
+                                    ) : model.model_lib
                                 };
                             }
                             return model;
@@ -546,7 +546,7 @@
 
                 // Use Qwen3-0.6B-Instruct
                 engine = await CreateMLCEngine(
-                    "Qwen3-0.6B-q0f16-MLC",
+                    "Qwen3-0.6B-q4f16_1-MLC",
                     engineConfig
                 );
 
